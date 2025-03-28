@@ -1,5 +1,7 @@
 //จัดการเรื่องอัปโหลดไฟล์ โดย multer
 //จัดการเรื่อง การทำงาน CRUD กับฐานข้อมูล โดย prisma
+const {v2: cloudinary} = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 //require package ที่ต้องใช้ในการ Upload ไฟล์
 const multer = require('multer');
@@ -13,13 +15,26 @@ const prisma = new PrismaClient();
 
 //สร้างส่วนของการอัปโหลดไฟล์ด้วย multer ทำ 2 ขั้นตอน
 //1. กําหนดตําแหน่งที่จะอัปโหลดไฟล์ และชื่อไฟล์
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'images/run');
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'images/run');
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, 'run_' + Math.floor(Math.random() * Date.now()) + path.extname(file.originalname));
+//     }
+// });
+
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => {
+        const newFileName = 'run_' + Math.floor(Math.random() * Date.now())
+ 
+        return {
+            folder: 'images/run', // โฟลเดอร์ใน Cloudinary
+            allowed_formats: ['jpg', 'png'], // กำหนดประเภทไฟล์
+            public_id: newFileName
+        }
     },
-    filename: (req, file, cb) => {
-        cb(null, 'run_' + Math.floor(Math.random() * Date.now()) + path.extname(file.originalname));
-    }
 });
 //2. ฟังก์ชันอัปโหลดไฟล์
 exports.uploadRun = multer({
@@ -45,7 +60,8 @@ exports.createRun = async (req, res) => {
                 dateRun: req.body.dateRun,
                 distanceRun: parseFloat(req.body.distanceRun),
                 placeRun: req.body.placeRun,
-                runImage: req.file ? req.file.path.replace("images\\run\\", "") : "",
+                // runImage: req.file ? req.file.path.replace("images\\run\\", "") : "",
+                runImage: req.file ? req.file.path : "",
                 runnerId: parseInt(req.body.runnerId)
             }
         });
